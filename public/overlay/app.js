@@ -127,6 +127,8 @@ function handleMessage(message) {
     case 'PING':
       // Server ping, respond with pong
       ws?.send(JSON.stringify({ type: 'PONG', payload: { timestamp: Date.now() } }));
+      // Update heartbeat when we respond to server ping
+      lastHeartbeat = Date.now();
       break;
   }
 }
