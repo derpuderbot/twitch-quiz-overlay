@@ -454,18 +454,33 @@ function handleConfigMessage(ws, message) {
         ws.send(JSON.stringify({ type: 'PONG', payload: { timestamp: Date.now() } }));
         break;
       }
+
+      case 'PONG': {
+        // Track pong response for connection health monitoring
+        const clientInfo = configClients.get(ws);
+        if (clientInfo) {
+          clientInfo.lastPong = Date.now();
+        }
+        break;
+      }
     }
   } catch (error) {
     console.error('Error handling config message:', error);
   }
 }
 
-// Handle overlay client messages (mostly just ping/pong)
+// Track last pong time for each overlay client
+const overlayClientPongs = new Map();
+
+// Handle overlay client messages (ping/pong)
 function handleOverlayMessage(ws, message) {
   try {
     const { type } = JSON.parse(message);
     if (type === 'PING') {
       ws.send(JSON.stringify({ type: 'PONG', payload: { timestamp: Date.now() } }));
+    } else if (type === 'PONG') {
+      // Track pong response for connection health monitoring
+      overlayClientPongs.set(ws, Date.now());
     }
   } catch (error) {
     console.error('Error handling overlay message:', error);
@@ -518,7 +533,7 @@ wss.on('connection', (ws, req) => {
   } else if (url.startsWith('/config')) {
     // Config client connection
     console.log('Config client connected');
-    configClients.set(ws, { authenticated: false });
+    configClients.set(ws, { authenticated: false, lastPong: null });
 
     ws.on('message', (data) => handleConfigMessage(ws, data.toString()));
 
@@ -544,7 +559,7 @@ wss.on('connection', (ws, req) => {
   }
 });
 
-// Heartbeat interval
+// Heartbeat interval - tracks PONG responses and cleans stale connections
 setInterval(() => {
   const now = Date.now();
   state.lastHeartbeat = now;
@@ -559,8 +574,26 @@ setInterval(() => {
     if (client.readyState === 1) client.send(pingMessage);
   }
 
-  // Clean up stale connections (no pong for 15 seconds)
-  // Note: In a real implementation, you'd track pong responses
+  // Clean up stale overlay connections (no pong for 25 seconds)
+  const staleTimeout = 25000;
+  for (const client of overlayClients) {
+    const lastPong = overlayClientPongs.get(client);
+    if (lastPong && (now - lastPong > staleTimeout)) {
+      console.log('[Server] Overlay client stale (no pong for', now - lastPong, 'ms), closing');
+      client.close(1001, 'Heartbeat timeout');
+      overlayClients.delete(client);
+      overlayClientPongs.delete(client);
+    }
+  }
+
+  // Clean up stale config connections
+  for (const [client, info] of configClients) {
+    if (info.lastPong && (now - info.lastPong > staleTimeout)) {
+      console.log('[Server] Config client stale, closing');
+      client.close(1001, 'Heartbeat timeout');
+      configClients.delete(client);
+    }
+  }
 }, 5000);
 
 // Start server

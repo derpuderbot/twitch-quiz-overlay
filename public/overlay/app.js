@@ -10,7 +10,9 @@
 const WS_PROTOCOL = location.protocol === 'https:' ? 'wss:' : 'ws:';
 const WS_URL = `${WS_PROTOCOL}//${location.host}/overlay`;
 const RECONNECT_DELAY = 3000;
-const HEARTBEAT_TIMEOUT = 15000;
+const HEARTBEAT_TIMEOUT = 30000;        // Erhöht: 30s für Railway LoadBalancer
+const HEARTBEAT_INTERVAL = 8000;        // Client-Heartbeat alle 8s (unter Railway Timeout)
+const SERVER_PING_INTERVAL = 5000;      // Erwarteter Server-PING (für Monitoring)
 
 // ==========================================================================
 // State
@@ -53,7 +55,8 @@ function connect() {
   ws.onopen = () => {
     console.log('[Overlay] Connected to server');
     clearTimeout(reconnectTimer);
-    sendPing();
+    sendPing();              // Immediate ping on connect
+    startHeartbeatMonitor(); // Start heartbeat monitor AFTER connection
   };
 
   ws.onmessage = (event) => {
@@ -67,6 +70,7 @@ function connect() {
 
   ws.onclose = () => {
     console.log('[Overlay] Disconnected from server');
+    stopHeartbeatMonitor();   // Stop heartbeat monitor on disconnect
     setConnectionStatus(false);
     scheduleReconnect();
   };
@@ -90,18 +94,35 @@ function sendPing() {
   }
 }
 
-// Heartbeat monitoring
+let clientHeartbeatInterval = null;
+
+// Heartbeat monitoring - robust: start AFTER connection established
 function startHeartbeatMonitor() {
-  // Client sends own ping every 10 seconds (independent of server)
-  setInterval(sendPing, 10000);
+  // Clear any existing interval
+  if (clientHeartbeatInterval) clearInterval(clientHeartbeatInterval);
+
+  // Client sends own ping every HEARTBEAT_INTERVAL (independent of server)
+  clientHeartbeatInterval = setInterval(sendPing, HEARTBEAT_INTERVAL);
+  console.log('[Overlay] Client heartbeat monitor started (interval:', HEARTBEAT_INTERVAL + 'ms)');
 
   // Monitor for timeout (check every second)
   heartbeatTimer = setInterval(() => {
     if (Date.now() - lastHeartbeat > HEARTBEAT_TIMEOUT) {
-      console.log('[Overlay] Heartbeat timeout, reconnecting...');
+      console.log('[Overlay] Heartbeat timeout, reconnecting... (diff:', Date.now() - lastHeartbeat + 'ms)');
       ws?.close();
     }
   }, 1000);
+}
+
+function stopHeartbeatMonitor() {
+  if (clientHeartbeatInterval) {
+    clearInterval(clientHeartbeatInterval);
+    clientHeartbeatInterval = null;
+  }
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer);
+    heartbeatTimer = null;
+  }
 }
 
 // ==========================================================================
