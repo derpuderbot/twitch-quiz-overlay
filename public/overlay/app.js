@@ -6,7 +6,9 @@
 // ==========================================================================
 // Configuration
 // ==========================================================================
-const WS_URL = `ws://${location.host}/overlay`;
+// Auto-detect WSS for HTTPS, WS for HTTP
+const WS_PROTOCOL = location.protocol === 'https:' ? 'wss:' : 'ws:';
+const WS_URL = `${WS_PROTOCOL}//${location.host}/overlay`;
 const RECONNECT_DELAY = 3000;
 const HEARTBEAT_TIMEOUT = 15000;
 

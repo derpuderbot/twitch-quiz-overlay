@@ -6,7 +6,9 @@
 // ==========================================================================
 // Configuration
 // ==========================================================================
-const WS_URL = `ws://${location.host}/config`;
+// Auto-detect WSS for HTTPS, WS for HTTP
+const WS_PROTOCOL = location.protocol === 'https:' ? 'wss:' : 'ws:';
+const WS_URL = `${WS_PROTOCOL}//${location.host}/config`;
 const RECONNECT_DELAY = 3000;
 const HEARTBEAT_INTERVAL = 5000;
 const COMMAND_RATE_LIMIT = 50; // ms between commands
