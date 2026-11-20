@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Twitch Quiz Overlay - Config Panel">
+  <title>Quiz Overlay Config</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Auth Screen -->
+  <div class="auth-screen" id="authScreen" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="auth-card">
+      <h1 id="authTitle">Quiz Overlay Config</h1>
+      <p class="auth-subtitle">Passwort eingeben für Zugriff</p>
+      <form id="authForm" novalidate>
+        <div class="form-group">
+          <label for="passwordInput">Passwort</label>
+          <input type="password" id="passwordInput" name="password" autocomplete="current-password" required aria-describedby="passwordHint">
+          <span id="passwordHint" class="form-hint">Das Passwort wurde vom Streamer festgelegt</span>
+        </div>
+        <button type="submit" class="btn btn--primary btn--full">Verbinden</button>
+        <p id="authError" class="auth-error" aria-live="polite" hidden></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main App (hidden until authenticated) -->
+  <div class="app" id="app" hidden>
+    <!-- Header -->
+    <header class="header">
+      <div class="header__left">
+        <h1 class="header__title">Quiz Overlay Config</h1>
+        <div class="header__status" id="connectionStatus">
+          <span class="status-dot" id="statusDot"></span>
+          <span class="status-text" id="statusText">Verbinde...</span>
+        </div>
+      </div>
+      <div class="header__right">
+        <button type="button" class="btn btn--ghost" id="exportBtn" title="Konfiguration exportieren">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Export
+        </button>
+        <button type="button" class="btn btn--ghost" id="importBtn" title="Konfiguration importieren">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 21l-5-5-5 5M12 16V3"/></svg>
+          Import
+        </button>
+        <input type="file" id="importFile" accept=".json" hidden>
+        <button type="button" class="btn btn--danger" id="logoutBtn">Abmelden</button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+      <!-- Sidebar Navigation -->
+      <nav class="sidebar" aria-label="Hauptnavigation">
+        <ul class="sidebar__list">
+          <li><button type="button" class="sidebar__item sidebar__item--active" data-tab="questions" aria-controls="panel-questions" role="tab" aria-selected="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            <span>Fragen</span>
+          </button></li>
+          <li><button type="button" class="sidebar__item" data-tab="players" aria-controls="panel-players" role="tab" aria-selected="false">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Spieler</span>
+          </button></li>
+          <li><button type="button" class="sidebar__item" data-tab="design" aria-controls="panel-design" role="tab" aria-selected="false">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span>Design</span>
+          </button></li>
+        </ul>
+        <div class="sidebar__footer">
+          <button type="button" class="btn btn--ghost btn--full" id="resetRoundBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            Runde zurücksetzen
+          </button>
+        </div>
+      </nav>
+
+      <!-- Content Panels -->
+      <div class="content" role="tabpanel">
+        <!-- Questions Panel -->
+        <section class="panel panel--active" id="panel-questions" role="tabpanel" aria-labelledby="questions-tab">
+          <header class="panel__header">
+            <h2>Fragen-Management</h2>
+            <button type="button" class="btn btn--primary" id="addQuestionBtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Frage hinzufügen
+            </button>
+          </header>
+
+          <div class="questions-list" id="questionsList" role="list" aria-label="Fragenliste">
+            <!-- Questions will be rendered here -->
+          </div>
+
+          <p class="empty-state" id="emptyQuestions" hidden>Keine Fragen vorhanden. Klicke auf "Frage hinzufügen" um zu beginnen.</p>
+        </section>
+
+        <!-- Players Panel -->
+        <section class="panel" id="panel-players" role="tabpanel" aria-labelledby="players-tab">
+          <header class="panel__header">
+            <h2>Spieler-Verwaltung</h2>
+          </header>
+
+          <div class="players-grid">
+            <!-- Left Player -->
+            <article class="player-card player-card--left" aria-label="Spieler Links">
+              <header class="player-card__header">
+                <h3>Spieler Links</h3>
+                <span class="player-card__side-indicator" style="--side-color: var(--buzzer-active-left)"></span>
+              </header>
+
+              <div class="form-group">
+                <label for="leftNameInput">Name</label>
+                <input type="text" id="leftNameInput" value="Spieler 1" maxlength="30">
+              </div>
+
+              <div class="form-group">
+                <label for="leftAvatarInput">Avatar URL (optional)</label>
+                <input type="url" id="leftAvatarInput" placeholder="https://example.com/avatar.png">
+              </div>
+
+              <div class="points-control">
+                <label>Punkte</label>
+                <div class="points-control__buttons">
+                  <button type="button" class="btn btn--icon points-btn" data-side="left" data-delta="-1" aria-label="1 Punkt abziehen">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </button>
+                  <output class="points-display" id="leftPointsDisplay" for="leftNameInput">0</output>
+                  <button type="button" class="btn btn--icon points-btn" data-side="left" data-delta="1" aria-label="1 Punkt hinzufügen">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </button>
+                </div>
+                <div class="points-control__set">
+                  <input type="number" id="leftPointsSet" min="0" max="9999" placeholder="Punkte setzen">
+                  <button type="button" class="btn btn--sm" id="leftPointsSetBtn">Setzen</button>
+                </div>
+              </div>
+
+              <div class="buzzer-test">
+                <button type="button" class="btn btn--primary btn--full buzzer-test-btn" data-side="left">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  Buzzer Links simulieren
+                </button>
+              </div>
+            </article>
+
+            <!-- Right Player -->
+            <article class="player-card player-card--right" aria-label="Spieler Rechts">
+              <header class="player-card__header">
+                <h3>Spieler Rechts</h3>
+                <span class="player-card__side-indicator" style="--side-color: var(--buzzer-active-right)"></span>
+              </header>
+
+              <div class="form-group">
+                <label for="rightNameInput">Name</label>
+                <input type="text" id="rightNameInput" value="Spieler 2" maxlength="30">
+              </div>
+
+              <div class="form-group">
+                <label for="rightAvatarInput">Avatar URL (optional)</label>
+                <input type="url" id="rightAvatarInput" placeholder="https://example.com/avatar.png">
+              </div>
+
+              <div class="points-control">
+                <label>Punkte</label>
+                <div class="points-control__buttons">
+                  <button type="button" class="btn btn--icon points-btn" data-side="right" data-delta="-1" aria-label="1 Punkt abziehen">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </button>
+                  <output class="points-display" id="rightPointsDisplay" for="rightNameInput">0</output>
+                  <button type="button" class="btn btn--icon points-btn" data-side="right" data-delta="1" aria-label="1 Punkt hinzufügen">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </button>
+                </div>
+                <div class="points-control__set">
+                  <input type="number" id="rightPointsSet" min="0" max="9999" placeholder="Punkte setzen">
+                  <button type="button" class="btn btn--sm" id="rightPointsSetBtn">Setzen</button>
+                </div>
+              </div>
+
+              <div class="buzzer-test">
+                <button type="button" class="btn btn--primary btn--full buzzer-test-btn" data-side="right">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  Buzzer Rechts simulieren
+                </button>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <!-- Design Panel -->
+        <section class="panel" id="panel-design" role="tabpanel" aria-labelledby="design-tab">
+          <header class="panel__header">
+            <h2>Design-Tokens</h2>
+            <p class="panel__description">Änderungen werden live an das Overlay gesendet</p>
+          </header>
+
+          <div class="design-tabs">
+            <button type="button" class="design-tab-btn design-tab-btn--active" data-design-tab="colors">Farben</button>
+            <button type="button" class="design-tab-btn" data-design-tab="typography">Typografie</button>
+            <button type="button" class="design-tab-btn" data-design-tab="layout">Layout</button>
+            <button type="button" class="design-tab-btn" data-design-tab="animation">Animation</button>
+          </div>
+
+          <!-- Colors -->
+          <div class="design-panel design-panel--active" id="design-colors" role="tabpanel">
+            <div class="token-group">
+              <h3>Basis</h3>
+              <div class="token-grid">
+                <label class="token-color">
+                  <span class="token-color__label">Hintergrund (--bg)</span>
+                  <input type="color" class="token-color__input" data-token="--bg">
+                </label>
+                <label class="token-color">
+                  <span class="token-color__label">Hintergrund erhöht (--bg-elevated)</span>
+                  <input type="color" class="token-color__input" data-token="--bg-elevated">
+                </label>
+                <label class="token-color">
+                  <span class="token-color__label">Text (--fg)</span>
+                  <input type="color" class="token-color__input" data-token="--fg">
+                </label>
+                <label class="token-color">
+                  <span class="token-color__label">Text gedämpft (--fg-muted)</span>
+                  <input type="color" class="token-color__input" data-token="--fg-muted">
+                </label>
+              </div>
+            </div>
+
+            <div class="token-group">
+              <h3>Marke & Accent</h3>
+              <div class="token-grid">
+                <label class="token-color">
+                  <span class="token-color__label">Accent (--accent)</span>
+                  <input type="color" class="token-color__input" data-token="--accent">
+                </label>
+                <label class="token-color">
+                  <span class="token-color__label">Accent stark (--accent-strong)</span>
+                  <input type="color" class="token-color__input" data-token="--accent-strong">
+                </label>
+              </div>
+            </div>
+
+            <div class="token-group">
+              <h3>Buzzer-Zustände</h3>
+              <div class="token-grid">
+                <label class="token-color">
+                  <span class="token-color__label">Idle (--buzzer-idle)</span>
+                  <input type="color" class="token-color__input" data-token="--buzzer-idle">
+                </label>
+                <label class="token-color">
+                  <span class="token-color__label">Hover (--buzzer-hover)</span>
+                  <input type="color" class="token-color__input" data-token="--buzzer-hover">
+                </label>
+                <label class="token-color">
+                  <span class="token-color__label">Links gewinnt (--buzzer-active-left)</span>
+                  <input type="color" class="token-color__input" data-token="--buzzer-active-left">
+                </label>
+                <label class="token-color">
+                  <span class="token-color__label">Rechts gewinnt (--buzzer-active-right)</span>
+                  <input type="color" class="token-color__input" data-token="--buzzer-active-right">
+                </label>
+                <label class="token-color">
+                  <span class="token-color__label">Lockout (--buzzer-lockout)</span>
+                  <input type="color" class="token-color__input" data-token="--buzzer-lockout">
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Typography -->
+          <div class="design-panel" id="design-typography" role="tabpanel" hidden>
+            <div class="token-group">
+              <h3>Schriftarten</h3>
+              <div class="token-grid token-grid--wide">
+                <label class="token-select">
+                  <span class="token-select__label">Display Font (--font-display)</span>
+                  <select class="token-select__input" data-token="--font-display">
+                    <option value="'Space Grotesk', sans-serif">Space Grotesk</option>
+                    <option value="'Outfit', sans-serif">Outfit</option>
+                    <option value="'Inter', sans-serif">Inter</option>
+                    <option value="'Poppins', sans-serif">Poppins</option>
+                    <option value="'IBM Plex Sans', sans-serif">IBM Plex Sans</option>
+                    <option value="system-ui, sans-serif">System UI</option>
+                  </select>
+                </label>
+                <label class="token-select">
+                  <span class="token-select__label">UI Font (--font-ui)</span>
+                  <select class="token-select__input" data-token="--font-ui">
+                    <option value="'IBM Plex Sans', sans-serif">IBM Plex Sans</option>
+                    <option value="'Inter', sans-serif">Inter</option>
+                    <option value="'Space Grotesk', sans-serif">Space Grotesk</option>
+                    <option value="'Outfit', sans-serif">Outfit</option>
+                    <option value="system-ui, sans-serif">System UI</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+
+            <div class="token-group">
+              <h3>Schriftgrößen</h3>
+              <div class="token-grid token-grid--sliders">
+                <label class="token-slider">
+                  <span class="token-slider__label">Frage (--fs-question) <output class="token-slider__value">clamp(1.75rem, 4vw, 3rem)</output></span>
+                  <input type="range" class="token-slider__input" data-token="--fs-question" min="1" max="5" step="0.25" value="3">
+                </label>
+                <label class="token-slider">
+                  <span class="token-slider__label">Punkte (--fs-points) <output class="token-slider__value">clamp(2.5rem, 6vw, 5rem)</output></span>
+                  <input type="range" class="token-slider__input" data-token="--fs-points" min="2" max="8" step="0.5" value="5">
+                </label>
+                <label class="token-slider">
+                  <span class="token-slider__label">Name (--fs-name) <output class="token-slider__value">clamp(1.1rem, 2.5vw, 1.5rem)</output></span>
+                  <input type="range" class="token-slider__input" data-token="--fs-name" min="0.8" max="2.5" step="0.1" value="1.5">
+                </label>
+                <label class="token-slider">
+                  <span class="token-slider__label">Timer (--fs-timer) <output class="token-slider__value">clamp(2rem, 5vw, 4rem)</output></span>
+                  <input type="range" class="token-slider__input" data-token="--fs-timer" min="1.5" max="6" step="0.5" value="4">
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Layout -->
+          <div class="design-panel" id="design-layout" role="tabpanel" hidden>
+            <div class="token-group">
+              <h3>Rahmen & Abstände</h3>
+              <div class="token-grid token-grid--sliders">
+                <label class="token-slider">
+                  <span class="token-slider__label">Rahmen Radius (--frame-radius) <output class="token-slider__value">16px</output></span>
+                  <input type="range" class="token-slider__input" data-token="--frame-radius" min="0" max="32" step="1" value="16">
+                </label>
+                <label class="token-slider">
+                  <span class="token-slider__label">Rahmen Gap (--frame-gap) <output class="token-slider__value">clamp(16px, 3vw, 32px)</output></span>
+                  <input type="range" class="token-slider__input" data-token="--frame-gap" min="8" max="64" step="4" value="24">
+                </label>
+                <label class="token-slider">
+                  <span class="token-slider__label">Buzzer Glow Spread (--buzzer-glow-spread) <output class="token-slider__value">0 0 32px 8px</output></span>
+                  <input type="range" class="token-slider__input" data-token="--buzzer-glow-spread" min="0" max="64" step="4" value="32">
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Animation -->
+          <div class="design-panel" id="design-animation" role="tabpanel" hidden>
+            <div class="token-group">
+              <h3>Übergänge</h3>
+              <div class="token-grid token-grid--sliders">
+                <label class="token-slider">
+                  <span class="token-slider__label">Schnell (--transition-fast) <output class="token-slider__value">120ms</output></span>
+                  <input type="range" class="token-slider__input" data-token="--transition-fast" min="0" max="500" step="10" value="120">
+                </label>
+                <label class="token-slider">
+                  <span class="token-slider__label">Mittel (--transition-med) <output class="token-slider__value">250ms</output></span>
+                  <input type="range" class="token-slider__input" data-token="--transition-med" min="0" max="1000" step="10" value="250">
+                </label>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Question Modal -->
+  <dialog class="modal" id="questionModal" aria-modal="true" aria-labelledby="modalTitle">
+    <form class="modal__content" id="questionForm" method="dialog">
+      <header class="modal__header">
+        <h2 id="modalTitle">Frage hinzufügen</h2>
+        <button type="button" class="modal__close" aria-label="Schließen" value="cancel">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </header>
+      <div class="modal__body">
+        <input type="hidden" id="questionId" name="id">
+        <div class="form-group">
+          <label for="questionText">Frage-Text *</label>
+          <textarea id="questionText" name="text" rows="3" required maxlength="500" placeholder="z.B. Wie heißt die Hauptstadt von Australien?"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="questionAnswer">Antwort (optional)</label>
+          <input type="text" id="questionAnswer" name="answer" maxlength="200" placeholder="z.B. Canberra">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="questionCategory">Kategorie (optional)</label>
+            <input type="text" id="questionCategory" name="category" maxlength="50" placeholder="z.B. Geografie">
+          </div>
+          <div class="form-group">
+            <label for="questionTimer">Timer (Sekunden)</label>
+            <input type="number" id="questionTimer" name="timer" min="10" max="120" value="30">
+          </div>
+        </div>
+      </div>
+      <footer class="modal__footer">
+        <button type="button" class="btn btn--ghost" value="cancel">Abbrechen</button>
+        <button type="submit" class="btn btn--primary" id="saveQuestionBtn">Speichern</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

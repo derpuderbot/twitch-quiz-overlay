@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Twitch Quiz Overlay - Interactive Quiz with Buzzer System">
+  <title>Twitch Quiz Overlay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="overlay" role="region" aria-label="Quiz Overlay">
+    <!-- Left Camera Frame -->
+    <article class="frame frame--left" aria-label="Spieler 1 Kamera">
+      <div class="frame__media" id="leftMedia">
+        <img class="frame__placeholder" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9'%3E%3Crect fill='%231a1a20' width='16' height='9'/%3E%3Ctext x='8' y='5.5' font-family='system-ui' font-size='1.2' fill='%23444' text-anchor='middle'%3EKAMERA 1%3C/text%3E%3C/svg%3E" alt="Kamera 1 Placeholder">
+      </div>
+      <div class="frame__info">
+        <h2 class="frame__name" id="leftName">Spieler 1</h2>
+        <div class="frame__points" id="leftPoints" aria-live="polite">0</div>
+      </div>
+      <div class="frame__buzzer-indicator" id="leftBuzzer" aria-live="assertive" aria-atomic="true"></div>
+    </article>
+
+    <!-- Right Camera Frame -->
+    <article class="frame frame--right" aria-label="Spieler 2 Kamera">
+      <div class="frame__media" id="rightMedia">
+        <img class="frame__placeholder" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9'%3E%3Crect fill='%231a1a20' width='16' height='9'/%3E%3Ctext x='8' y='5.5' font-family='system-ui' font-size='1.2' fill='%23444' text-anchor='middle'%3EKAMERA 2%3C/text%3E%3C/svg%3E" alt="Kamera 2 Placeholder">
+      </div>
+      <div class="frame__info">
+        <h2 class="frame__name" id="rightName">Spieler 2</h2>
+        <div class="frame__points" id="rightPoints" aria-live="polite">0</div>
+      </div>
+      <div class="frame__buzzer-indicator" id="rightBuzzer" aria-live="assertive" aria-atomic="true"></div>
+    </article>
+
+    <!-- Question Area -->
+    <section class="question-area" aria-label="Aktuelle Frage">
+      <div class="question__text" id="questionText" role="status" aria-live="polite">Warte auf Frage...</div>
+      <div class="question__timer" id="questionTimer" aria-hidden="true">
+        <svg class="timer__ring" viewBox="0 0 64 64" aria-hidden="true">
+          <circle class="timer__ring-bg" cx="32" cy="32" r="28" fill="none" stroke-width="4"/>
+          <circle class="timer__ring-progress" cx="32" cy="32" r="28" fill="none" stroke-width="4" stroke-linecap="round" stroke-dasharray="175.93" stroke-dashoffset="0"/>
+        </svg>
+        <span class="timer__value" id="timerValue">00:00</span>
+      </div>
+    </section>
+
+    <!-- Status Toast -->
+    <div class="status-toast" id="statusToast" role="status" aria-live="assertive" aria-atomic="true" hidden></div>
+
+    <!-- Connection Status Indicator -->
+    <div class="connection-indicator" id="connectionIndicator" aria-hidden="true">
+      <span class="connection-indicator__dot"></span>
+      <span class="connection-indicator__text">Verbunden</span>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+{
+  "name": "twitch-quiz-overlay",
+  "version": "1.0.0",
+  "description": "Professional Twitch Quiz Overlay with Buzzer System for OBS",
+  "main": "server/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "twitch",
+    "overlay",
+    "quiz",
+    "buzzer",
+    "obs",
+    "streaming"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "ws": "^8.18.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "vitest": "^2.0.5",
+    "eslint": "^9.9.0",
+    "prettier": "^3.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

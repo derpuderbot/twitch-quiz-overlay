@@ -1,0 +1,504 @@
+/* ==========================================================================
+   Twitch Quiz Overlay - Design Tokens & Styles
+   ========================================================================== */
+
+/* Design Tokens - Default Dark Mode (Twitch-compatible) */
+:root {
+  /* Base Colors */
+  --bg: #0E0E10;
+  --bg-elevated: #18181C;
+  --fg: #F1F1F3;
+  --fg-muted: #A0A0A8;
+
+  /* Brand / Accent */
+  --accent: #9146FF;
+  --accent-strong: #B388FF;
+
+  /* Buzzer States */
+  --buzzer-idle: #2A2A30;
+  --buzzer-hover: #3A3A44;
+  --buzzer-active-left: #00FF88;
+  --buzzer-active-right: #FF4466;
+  --buzzer-lockout: #FFAA00;
+
+  /* Typography */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-ui: 'IBM Plex Sans', sans-serif;
+  --fs-question: clamp(1.75rem, 4vw, 3rem);
+  --fs-points: clamp(2.5rem, 6vw, 5rem);
+  --fs-name: clamp(1.1rem, 2.5vw, 1.5rem);
+  --fs-timer: clamp(2rem, 5vw, 4rem);
+
+  /* Layout */
+  --frame-aspect: 16 / 9;
+  --frame-gap: clamp(16px, 3vw, 32px);
+  --frame-radius: 16px;
+  --buzzer-glow-spread: 0 0 32px 8px;
+  --transition-fast: 120ms ease-out;
+  --transition-med: 250ms ease-out;
+}
+
+/* Light Mode Override (optional, but default stays Dark for Twitch) */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #F4F4F5;
+    --bg-elevated: #FFFFFF;
+    --fg: #18181B;
+    --fg-muted: #71717A;
+    --buzzer-idle: #E4E4E7;
+    --buzzer-hover: #D4D4D8;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0ms;
+    --transition-med: 0ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ==========================================================================
+   Reset & Base
+   ========================================================================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent; /* Transparent for OBS browser source */
+  font-family: var(--font-ui);
+  color: var(--fg);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==========================================================================
+   Main Overlay Container
+   ========================================================================== */
+.overlay {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--frame-gap);
+  padding: var(--frame-gap);
+  align-content: start;
+  justify-items: stretch;
+}
+
+/* ==========================================================================
+   Camera Frames
+   ========================================================================== */
+.frame {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--frame-radius);
+  overflow: hidden;
+  background: var(--bg-elevated);
+  border: 3px solid var(--buzzer-idle);
+  transition:
+    border-color var(--transition-med),
+    box-shadow var(--transition-med);
+  aspect-ratio: var(--frame-aspect);
+  min-width: 0; /* Allow shrinking in grid */
+}
+
+/* Frame Media Area (Camera/Video) */
+.frame__media {
+  flex: 1;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.frame__placeholder,
+.frame__media video,
+.frame__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Frame Info (Name & Points) */
+.frame__info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: clamp(8px, 2vw, 16px);
+  background: linear-gradient(180deg, transparent 0%, rgba(14, 14, 16, 0.95) 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.frame__name {
+  font-family: var(--font-display);
+  font-size: var(--fs-name);
+  font-weight: 600;
+  color: var(--fg);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.frame__points {
+  font-family: var(--font-display);
+  font-size: var(--fs-points);
+  font-weight: 700;
+  color: var(--accent);
+  text-shadow: 0 2px 12px rgba(145, 70, 255, 0.4);
+  line-height: 1;
+  transition: transform var(--transition-fast);
+}
+
+/* Points count-up animation */
+.frame__points--animating {
+  animation: countUp 0.4s var(--transition-med);
+}
+
+@keyframes countUp {
+  from { transform: scale(0.8); opacity: 0.5; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Buzzer Indicator (Glow Effect) */
+.frame__buzzer-indicator {
+  position: absolute;
+  inset: -3px; /* Compensate for border */
+  border-radius: calc(var(--frame-radius) + 3px);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+/* Buzzer States */
+.frame--buzzed-left .frame__buzzer-indicator,
+.frame--buzzed-right .frame__buzzer-indicator {
+  opacity: 1;
+}
+
+.frame--buzzed-left .frame__buzzer-indicator {
+  box-shadow: var(--buzzer-glow-spread) var(--buzzer-active-left);
+  border-color: var(--buzzer-active-left);
+  animation: buzzerPulse 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.frame--buzzed-right .frame__buzzer-indicator {
+  box-shadow: var(--buzzer-glow-spread) var(--buzzer-active-right);
+  border-color: var(--buzzer-active-right);
+  animation: buzzerPulse 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.frame--lockout .frame__buzzer-indicator {
+  opacity: 1;
+  box-shadow: var(--buzzer-glow-spread) var(--buzzer-lockout);
+  border-color: var(--buzzer-lockout);
+}
+
+@keyframes buzzerPulse {
+  0% { box-shadow: 0 0 0 0 var(--buzzer-active-left); }
+  50% { box-shadow: var(--buzzer-glow-spread) var(--buzzer-active-left); }
+  100% { box-shadow: 0 0 0 0 var(--buzzer-active-left); }
+}
+
+.frame--buzzed-right .frame__buzzer-indicator {
+  animation-name: buzzerPulseRight;
+}
+
+@keyframes buzzerPulseRight {
+  0% { box-shadow: 0 0 0 0 var(--buzzer-active-right); }
+  50% { box-shadow: var(--buzzer-glow-spread) var(--buzzer-active-right); }
+  100% { box-shadow: 0 0 0 0 var(--buzzer-active-right); }
+}
+
+/* ==========================================================================
+   Question Area
+   ========================================================================== */
+.question-area {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(8px, 1.5vw, 16px);
+  padding: clamp(12px, 2vw, 24px);
+  max-width: 100%;
+  width: 100%;
+}
+
+.question__text {
+  font-family: var(--font-ui);
+  font-size: var(--fs-question);
+  font-weight: 500;
+  color: var(--fg);
+  text-align: center;
+  max-width: 90%;
+  line-height: 1.3;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  transition: opacity var(--transition-med);
+}
+
+.question__text--updating {
+  opacity: 0;
+}
+
+/* Timer */
+.question__timer {
+  position: relative;
+  width: clamp(80px, 12vw, 140px);
+  height: clamp(80px, 12vw, 140px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timer__ring {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.timer__ring-bg {
+  stroke: var(--buzzer-idle);
+}
+
+.timer__ring-progress {
+  stroke: var(--accent);
+  transition: stroke-dashoffset 1s linear, stroke var(--transition-fast);
+  stroke-dashoffset: 0;
+}
+
+.timer__ring-progress--warning {
+  stroke: var(--buzzer-lockout);
+  animation: timerPulse 1s ease-in-out infinite;
+}
+
+.timer__ring-progress--danger {
+  stroke: var(--buzzer-active-right);
+  animation: timerPulse 0.5s ease-in-out infinite;
+}
+
+@keyframes timerPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.timer__value {
+  position: absolute;
+  font-family: var(--font-display);
+  font-size: var(--fs-timer);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* ==========================================================================
+   Status Toast
+   ========================================================================== */
+.status-toast {
+  position: fixed;
+  bottom: clamp(16px, 3vh, 32px);
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  padding: clamp(12px, 2vw, 16px) clamp(24px, 4vw, 40px);
+  background: var(--bg-elevated);
+  border: 2px solid var(--accent);
+  border-radius: 100px;
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  font-weight: 600;
+  color: var(--fg);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--transition-med) cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity var(--transition-med);
+  z-index: 100;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.status-toast--visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+.status-toast--buzzed {
+  border-color: var(--buzzer-active-left);
+  background: linear-gradient(90deg, var(--bg-elevated), rgba(0, 255, 136, 0.1));
+}
+
+.status-toast--lockout {
+  border-color: var(--buzzer-lockout);
+  background: linear-gradient(90deg, var(--bg-elevated), rgba(255, 170, 0, 0.1));
+}
+
+/* ==========================================================================
+   Connection Indicator
+   ========================================================================== */
+.connection-indicator {
+  position: fixed;
+  top: clamp(8px, 1.5vh, 16px);
+  right: clamp(8px, 1.5vw, 16px);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--buzzer-idle);
+  border-radius: 100px;
+  font-family: var(--font-ui);
+  font-size: clamp(0.7rem, 1.2vw, 0.85rem);
+  font-weight: 500;
+  color: var(--fg-muted);
+  opacity: 0.7;
+  transition: opacity var(--transition-fast);
+  z-index: 50;
+}
+
+.connection-indicator:hover {
+  opacity: 1;
+}
+
+.connection-indicator__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--buzzer-idle);
+  transition: background var(--transition-fast);
+}
+
+.connection-indicator--connected .connection-indicator__dot {
+  background: var(--buzzer-active-left);
+  box-shadow: 0 0 8px 2px var(--buzzer-active-left);
+}
+
+.connection-indicator--disconnected .connection-indicator__dot {
+  background: var(--buzzer-active-right);
+}
+
+/* ==========================================================================
+   Responsive Layout
+   ========================================================================== */
+
+/* ≥ 1600px: Full side-by-side layout (default grid) */
+
+/* 1200px - 1599px: Slightly compressed */
+@media (max-width: 1599px) {
+  :root {
+    --frame-gap: clamp(12px, 2.5vw, 24px);
+  }
+}
+
+/* < 1200px: Stacked layout for vertical browser sources */
+@media (max-width: 1199px) {
+  .overlay {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: var(--frame-gap);
+    padding: var(--frame-gap);
+    align-content: start;
+    overflow-y: auto;
+  }
+
+  .frame {
+    width: 100%;
+    max-width: none;
+  }
+
+  .question-area {
+    grid-column: 1;
+    order: 2; /* Between the two frames */
+  }
+
+  .frame--left { order: 1; }
+  .frame--right { order: 3; }
+}
+
+/* Very narrow / mobile portrait */
+@media (max-width: 600px) {
+  :root {
+    --frame-gap: 12px;
+    --frame-radius: 12px;
+  }
+
+  .overlay {
+    padding: 12px;
+  }
+
+  .frame__info {
+    padding: 12px;
+  }
+
+  .question__text {
+    max-width: 100%;
+  }
+}
+
+/* Landscape mobile / very wide short */
+@media (max-height: 500px) and (orientation: landscape) {
+  .overlay {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr auto;
+    align-content: center;
+  }
+
+  .question-area {
+    grid-column: 1 / -1;
+    order: 2;
+  }
+
+  .frame { order: 1; }
+  .frame--right { order: 1; }
+}
+
+/* ==========================================================================
+   Print / Accessibility
+   ========================================================================== */
+@media print {
+  .overlay {
+    background: white;
+    color: black;
+  }
+
+  .frame {
+    border-color: #ccc;
+    break-inside: avoid;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  :root {
+    --buzzer-idle: #444;
+    --bg-elevated: #000;
+    --fg: #fff;
+    --accent: #ff0;
+  }
+}

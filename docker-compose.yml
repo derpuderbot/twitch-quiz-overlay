@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  quiz-overlay:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: twitch-quiz-overlay
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      # Generate a secure secret: openssl rand -hex 32
+      - SHARED_SECRET=${SHARED_SECRET:-your-super-secret-shared-secret-change-in-production}
+    volumes:
+      # Persist state.json across container restarts
+      - ./server/state.json:/app/server/state.json
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {if(r.statusCode!==200) process.exit(1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - quiz-network
+
+  # Optional: Reverse proxy with SSL (for production WSS)
+  # Uncomment and configure for production deployment
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: quiz-overlay-nginx
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./certs:/etc/nginx/certs:ro
+  #   depends_on:
+  #     - quiz-overlay
+  #   networks:
+  #     - quiz-network
+
+networks:
+  quiz-network:
+    driver: bridge
+
+# For development with live reload, use:
+# docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
