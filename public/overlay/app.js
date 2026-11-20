@@ -84,11 +84,18 @@ function scheduleReconnect() {
 function sendPing() {
   if (ws?.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ type: 'PING', payload: { timestamp: Date.now() } }));
+    // Update heartbeat when WE send ping (client-controlled heartbeat)
+    lastHeartbeat = Date.now();
+    console.log('[Overlay] Client heartbeat sent, lastHeartbeat updated');
   }
 }
 
 // Heartbeat monitoring
 function startHeartbeatMonitor() {
+  // Client sends own ping every 10 seconds (independent of server)
+  setInterval(sendPing, 10000);
+
+  // Monitor for timeout (check every second)
   heartbeatTimer = setInterval(() => {
     if (Date.now() - lastHeartbeat > HEARTBEAT_TIMEOUT) {
       console.log('[Overlay] Heartbeat timeout, reconnecting...');
