@@ -45,6 +45,13 @@ function cacheElements() {
   els.authError = document.getElementById('authError');
   els.app = document.getElementById('app');
 
+  console.log('[Config] Cached elements:', {
+    authScreen: els.authScreen ? 'FOUND' : 'MISSING',
+    app: els.app ? 'FOUND' : 'MISSING',
+    authForm: els.authForm ? 'FOUND' : 'MISSING',
+    passwordInput: els.passwordInput ? 'FOUND' : 'MISSING'
+  });
+
   // Header
   els.statusDot = document.getElementById('statusDot');
   els.statusText = document.getElementById('statusText');
@@ -287,10 +294,29 @@ function connectWebSocket(token) {
 
 function handleAuthSuccess() {
   isAuthenticated = true;
-  sessionStorage.setItem('config_token', els.passwordInput.value.trim());
+  const token = els.passwordInput?.value?.trim() || '';
+  sessionStorage.setItem('config_token', token);
 
-  els.authScreen.hidden = true;
-  els.app.hidden = false;
+  console.log('[Config] Auth success, switching UI...', {
+    authScreen: els.authScreen,
+    app: els.app,
+    isAuthenticated
+  });
+
+  // Defensive: check elements exist
+  if (els.authScreen) {
+    els.authScreen.hidden = true;
+    els.authScreen.style.display = 'none';
+  } else {
+    console.error('[Config] authScreen element not found!');
+  }
+
+  if (els.app) {
+    els.app.hidden = false;
+    els.app.style.display = 'flex';
+  } else {
+    console.error('[Config] app element not found!');
+  }
 
   // Request initial state
   sendCommand('REQUEST_STATE');
