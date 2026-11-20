@@ -297,22 +297,16 @@ function handleAuthSuccess() {
   const token = els.passwordInput?.value?.trim() || '';
   sessionStorage.setItem('config_token', token);
 
-  console.log('[Config] Auth success, switching UI...', {
-    authScreen: els.authScreen,
-    app: els.app,
-    isAuthenticated
-  });
+  console.log('[Config] Auth success, switching UI...');
 
-  // Defensive: check elements exist
+  // Use style.display (higher specificity than CSS display: flex)
   if (els.authScreen) {
-    els.authScreen.hidden = true;
     els.authScreen.style.display = 'none';
   } else {
     console.error('[Config] authScreen element not found!');
   }
 
   if (els.app) {
-    els.app.hidden = false;
     els.app.style.display = 'flex';
   } else {
     console.error('[Config] app element not found!');
@@ -334,9 +328,10 @@ function handleLogout() {
   ws?.close();
   clearInterval(heartbeatTimer);
 
-  els.authScreen.hidden = false;
-  els.app.hidden = true;
-  els.passwordInput.value = '';
+  // Use style.display (higher specificity than CSS display: flex)
+  if (els.authScreen) els.authScreen.style.display = 'flex';
+  if (els.app) els.app.style.display = 'none';
+  if (els.passwordInput) els.passwordInput.value = '';
   els.passwordInput.focus();
 
   updateConnectionStatus(false);
